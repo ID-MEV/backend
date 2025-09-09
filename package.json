@@ -1,0 +1,26 @@
+{
+  "name": "mev_home-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^4.21.2",
+    "google-auth-library": "^10.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "mariadb": "^3.3.2",
+    "multer": "^1.4.5-lts.2",
+    "mysql2": "^3.14.4",
+    "node-cron": "^4.2.1"
+  },
+  "description": ""
+}
