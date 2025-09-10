@@ -16,7 +16,8 @@ app.use(cors({
 }));
 const PORT = process.env.PORT || 5101;
 
-const memoRouter = require('./memo'); // Add this line
+const memoRouter = require('./memo');
+const backgroundRouter = require('./background'); // Add this line
 
 // Initialize database and start caching
 initializeDatabase().then(() => {
@@ -37,8 +38,9 @@ initializeDatabase().then(() => {
     process.exit(1);
 });
 
-// Memo API 라우트 (Add this block)
+// API Routes
 app.use('/api/memo', memoRouter);
+app.use('/api/settings', backgroundRouter); // Add this line
 
 // API endpoint to get cached videos
 app.get('/api/videos', async (req, res) => {
