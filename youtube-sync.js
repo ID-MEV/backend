@@ -11,7 +11,7 @@ const dbPool = mariadb.createPool({
 });
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const PLAYLIST_IDS = process.env.PLAYLIST_IDS.split(',');
+const PLAYLIST_IDS = `${process.env.PLAYLIST_IDS},${process.env.PLAYLIST_IDS_choir},${process.env.PLAYLIST_IDS_special}`.split(',');
 
 const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3/playlistItems';
 
@@ -45,21 +45,37 @@ async function syncYoutubeData() {
         conn = await dbPool.getConnection();
         console.log('데이터 동기화를 위해 데이터베이스에 연결되었습니다.');
 
+        // TRUNCATE TABLE to ensure a clean slate
+        await conn.query('TRUNCATE TABLE youtube_videos_cache');
+        console.log('youtube_videos_cache 테이블이 비워졌습니다.');
+
         for (const playlistId of PLAYLIST_IDS) {
             console.log(`${playlistId} 재생목록 동기화를 시작합니다.`);
             const videos = await fetchVideosFromPlaylist(playlistId.trim());
 
             if (videos.length > 0) {
-                // 기존 데이터 삭제
-                await conn.query('DELETE FROM youtube_videos_cache WHERE playlistId = ?', [playlistId]);
-                console.log(`${playlistId}의 기존 캐시 데이터가 삭제되었습니다.`);
+                // Filter out duplicates based on playlistId and videoId
+                const uniqueVideos = [];
+                const seen = new Set();
+                videos.forEach(video => {
+                    const key = `${video.playlistId}-${video.videoId}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        uniqueVideos.push(video);
+                    }
+                });
+
+                // 기존 데이터 삭제 (TRUNCATE로 대체되지만, 혹시 몰라 남겨둠)
+                // await conn.query('DELETE FROM youtube_videos_cache WHERE playlistId = ?', [playlistId]);
+                // console.log(`${playlistId}의 기존 캐시 데이터가 삭제되었습니다.`);
 
                 // 새 데이터 삽입
-                const query = 'INSERT INTO youtube_videos_cache (playlistId, videoId, title, url, position) VALUES ?';
-                const values = videos.map(v => [v.playlistId, v.videoId, v.title, v.url, v.position]);
+                const query = 'INSERT INTO youtube_videos_cache (playlistId, videoId, title, url, position) VALUES (?, ?, ?, ?, ?)';
+                const values = uniqueVideos.map(v => [v.playlistId, v.videoId, v.title, v.url, v.position]);
                 
-                await conn.query(query, [values]);
-                console.log(`${playlistId}에 ${videos.length}개의 새 영상 데이터가 저장되었습니다.`);
+                console.log('Videos to insert:', uniqueVideos); // Log uniqueVideos
+                await conn.batch(query, values);
+                console.log(`${playlistId}에 ${uniqueVideos.length}개의 새 영상 데이터가 저장되었습니다.`);
             }
         }
         console.log('모든 재생목록의 동기화가 완료되었습니다.');

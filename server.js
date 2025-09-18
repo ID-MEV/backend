@@ -2,6 +2,8 @@ const express = require('express');
 const cron = require('node-cron');
 const { initializeDatabase, pool } = require('./db');
 const { cacheYoutubeVideos } = require('./cache');
+const { getPlaylistVideos } = require('./services/youtubeService');
+const { syncYoutubeVideos } = require('./models/youtubeModel');
 require('dotenv').config({ path: '.env' });
 const cors = require('cors'); // 1. cors 모듈 추가
 
@@ -18,6 +20,7 @@ const PORT = process.env.PORT || 5101;
 
 const memoRouter = require('./memo');
 const backgroundRouter = require('./background'); // Add this line
+const youtubeRouter = require('./youtube');
 
 // Initialize database and start caching
 initializeDatabase().then(() => {
@@ -26,7 +29,23 @@ initializeDatabase().then(() => {
     // Schedule YouTube video caching every Sunday at 3:00 PM
     cron.schedule('0 15 * * SUN', async () => {
         console.log('Running scheduled YouTube video caching...');
-        await cacheYoutubeVideos();
+        await cacheYoutubeVideos(); // Keep existing caching for 'videos' table
+
+        console.log('Running scheduled YouTube playlist data synchronization...');
+        const playlistIds = `${process.env.PLAYLIST_IDS},${process.env.PLAYLIST_IDS_choir},${process.env.PLAYLIST_IDS_special}`.split(',').filter(id => id.trim() !== '');
+
+        for (const playlistId of playlistIds) {
+            try {
+                console.log(`Synchronizing playlist: ${playlistId}`);
+                const videos = await getPlaylistVideos(playlistId.trim());
+                await syncYoutubeVideos(playlistId.trim(), videos);
+                console.log(`Successfully synchronized playlist ${playlistId}`);
+            } catch (error) {
+                console.error(`Error synchronizing playlist ${playlistId}:`, error);
+            }
+        }
+        console.log('Finished scheduled YouTube playlist data synchronization.');
+
     }, {
         scheduled: true,
         timezone: "Asia/Seoul" // 한국 시간대 설정
@@ -41,6 +60,7 @@ initializeDatabase().then(() => {
 // API Routes
 app.use('/api/memo', memoRouter);
 app.use('/api/settings', backgroundRouter); // Add this line
+app.use('/api/youtube-videos', youtubeRouter);
 
 // API endpoint to get cached videos
 app.get('/api/videos', async (req, res) => {
