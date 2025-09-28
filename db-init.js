@@ -29,7 +29,14 @@ async function createTable() {
         `;
 
         await conn.query(query);
-        console.log("'youtube_videos_cache' 테이블이 성공적으로 생성되었거나 이미 존재합니다.");
+        console.log("\'youtube_videos_cache\' 테이블이 성공적으로 생성되었거나 이미 존재합니다.");
+
+        const alterQuery = `
+            ALTER TABLE youtube_videos_cache
+            ADD COLUMN IF NOT EXISTS publishedAt DATETIME
+        `;
+        await conn.query(alterQuery);
+        console.log("'youtube_videos_cache' 테이블에 'publishedAt' 컬럼이 추가되었거나 이미 존재합니다.");
 
     } catch (err) {
         console.error("테이블 생성 중 오류 발생:", err);

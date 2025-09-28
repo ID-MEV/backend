@@ -13,7 +13,8 @@ app.use(cors({
     origin: [
         'https://mev.o-r.kr',
         'http://localhost:5173',
-        'http://mev.o-r.kr:5173'
+        'http://mev.o-r.kr:5173',
+        'https://seongrim.o-r.kr'
     ]
 }));
 const PORT = process.env.PORT || 5101;
@@ -21,6 +22,7 @@ const PORT = process.env.PORT || 5101;
 const memoRouter = require('./memo');
 const backgroundRouter = require('./background'); // Add this line
 const youtubeRouter = require('./youtube');
+const sermonRouter = require('./sermons');
 
 // Initialize database and start caching
 initializeDatabase().then(() => {
@@ -61,6 +63,7 @@ initializeDatabase().then(() => {
 app.use('/api/memo', memoRouter);
 app.use('/api/settings', backgroundRouter); // Add this line
 app.use('/api/youtube-videos', youtubeRouter);
+app.use('/api/sermons', sermonRouter);
 
 // API endpoint to get cached videos
 app.get('/api/videos', async (req, res) => {

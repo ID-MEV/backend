@@ -32,6 +32,7 @@ async function fetchVideosFromPlaylist(playlistId) {
             title: item.snippet.title,
             url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`,
             position: item.snippet.position,
+            publishedAt: item.snippet.publishedAt,
         }));
     } catch (error) {
         console.error(`Playlist ${playlistId}로부터 영상을 가져오는 데 실패했습니다:`, error.response ? error.response.data : error.message);
@@ -65,13 +66,16 @@ async function syncYoutubeData() {
                     }
                 });
 
-                // 기존 데이터 삭제 (TRUNCATE로 대체되지만, 혹시 몰라 남겨둠)
-                // await conn.query('DELETE FROM youtube_videos_cache WHERE playlistId = ?', [playlistId]);
-                // console.log(`${playlistId}의 기존 캐시 데이터가 삭제되었습니다.`);
-
                 // 새 데이터 삽입
-                const query = 'INSERT INTO youtube_videos_cache (playlistId, videoId, title, url, position) VALUES (?, ?, ?, ?, ?)';
-                const values = uniqueVideos.map(v => [v.playlistId, v.videoId, v.title, v.url, v.position]);
+                const query = 'INSERT INTO youtube_videos_cache (playlistId, videoId, title, url, position, publishedAt) VALUES (?, ?, ?, ?, ?, ?)';
+                const values = uniqueVideos.map(v => [
+                    v.playlistId, 
+                    v.videoId, 
+                    v.title, 
+                    v.url, 
+                    v.position, 
+                    new Date(v.publishedAt).toISOString().slice(0, 19).replace('T', ' ')
+                ]);
                 
                 console.log('Videos to insert:', uniqueVideos); // Log uniqueVideos
                 await conn.batch(query, values);
