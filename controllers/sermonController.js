@@ -14,7 +14,7 @@ async function getLatestSermons(req, res) {
         conn = await pool.getConnection();
         
         const query = `
-            SELECT videoId, title, publishedAt
+            SELECT videoId, title, url, publishedAt
             FROM youtube_videos_cache
             WHERE playlistId IN (?)
             ORDER BY publishedAt DESC
