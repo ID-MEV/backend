@@ -47,6 +47,14 @@ async function initializeDatabase() {
         await conn.query(createMemosTableQuery);
         console.log("Table 'memos' ensured.");
 
+        // Add isImportant column to memos table if not exists
+        const alterMemosTableQuery = `
+            ALTER TABLE memos
+            ADD COLUMN IF NOT EXISTS isImportant BOOLEAN DEFAULT FALSE
+        `;
+        await conn.query(alterMemosTableQuery);
+        console.log("Column 'isImportant' in table 'memos' ensured.");
+
         // Create memo_deleted table if not exists
         const createMemoDeletedTableQuery = `
             CREATE TABLE IF NOT EXISTS memo_deleted (
