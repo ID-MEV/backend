@@ -11,7 +11,7 @@ const dbPool = mariadb.createPool({
 });
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const PLAYLIST_IDS = `${process.env.PLAYLIST_IDS},${process.env.PLAYLIST_IDS_choir},${process.env.PLAYLIST_IDS_special}`.split(',');
+const PLAYLIST_IDS = `${process.env.PLAYLIST_IDS},${process.env.PLAYLIST_IDS_choir},${process.env.PLAYLIST_IDS_special},${process.env.PLAYLIST_IDS_wednesday},${process.env.PLAYLIST_IDS_dawn},${process.env.PLAYLIST_IDS_sunday_pm}`.split(',');
 
 const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3/playlistItems';
 
