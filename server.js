@@ -3,7 +3,7 @@ const cron = require('node-cron');
 const { initializeDatabase, pool } = require('./db');
 const { cacheYoutubeVideos } = require('./cache');
 const { getPlaylistVideos } = require('./services/youtubeService');
-const { syncYoutubeVideos } = require('./models/youtubeModel');
+const { syncYoutubeData } = require('./youtube-sync');
 require('dotenv').config({ path: '.env' });
 const cors = require('cors'); // 1. cors 모듈 추가
 
@@ -32,21 +32,7 @@ initializeDatabase().then(() => {
     cron.schedule('0 15 * * SUN', async () => {
         console.log('Running scheduled YouTube video caching...');
         await cacheYoutubeVideos(); // Keep existing caching for 'videos' table
-
-        console.log('Running scheduled YouTube playlist data synchronization...');
-        const playlistIds = `${process.env.PLAYLIST_IDS},${process.env.PLAYLIST_IDS_choir},${process.env.PLAYLIST_IDS_special}`.split(',').filter(id => id.trim() !== '');
-
-        for (const playlistId of playlistIds) {
-            try {
-                console.log(`Synchronizing playlist: ${playlistId}`);
-                const videos = await getPlaylistVideos(playlistId.trim());
-                await syncYoutubeVideos(playlistId.trim(), videos);
-                console.log(`Successfully synchronized playlist ${playlistId}`);
-            } catch (error) {
-                console.error(`Error synchronizing playlist ${playlistId}:`, error);
-            }
-        }
-        console.log('Finished scheduled YouTube playlist data synchronization.');
+        await syncYoutubeData();
 
     }, {
         scheduled: true,
