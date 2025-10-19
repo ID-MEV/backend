@@ -3,11 +3,11 @@ const { pool } = require('../db');
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
 async function getLatestSermons(req, res) {
-    const sermonPlaylistIds = process.env.SERMON_PLAYLIST_IDS ? process.env.SERMON_PLAYLIST_IDS.split(',') : [];
+    // const sermonPlaylistIds = process.env.SERMON_PLAYLIST_IDS ? process.env.SERMON_PLAYLIST_IDS.split(',') : [];
 
-    if (sermonPlaylistIds.length === 0) {
-        return res.status(400).json({ message: 'SERMON_PLAYLIST_IDS is not defined in .env file' });
-    }
+    // if (sermonPlaylistIds.length === 0) {
+    //     return res.status(400).json({ message: 'SERMON_PLAYLIST_IDS is not defined in .env file' });
+    // }
 
     let conn;
     try {
@@ -16,12 +16,11 @@ async function getLatestSermons(req, res) {
         const query = `
             SELECT videoId, title, url, publishedAt
             FROM youtube_videos_cache
-            WHERE playlistId IN (?)
             ORDER BY publishedAt DESC
             LIMIT 3
         `;
         
-        const rows = await conn.query(query, [sermonPlaylistIds]);
+        const rows = await conn.query(query);
 
         const sermons = rows.map(row => ({
             ...row,
