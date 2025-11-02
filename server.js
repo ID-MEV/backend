@@ -28,17 +28,36 @@ const sermonRouter = require('./sermons');
 initializeDatabase().then(() => {
     console.log("Database initialization complete.");
 
-    // Schedule YouTube video caching every Sunday at 3:00 PM
-    cron.schedule('0 15 * * SUN', async () => {
-        console.log('Running scheduled YouTube video caching...');
-        await cacheYoutubeVideos(); // Keep existing caching for 'videos' table
+    // Schedule YouTube video caching for Monday-Saturday at 7:30 AM
+    cron.schedule('30 7 * * MON-SAT', async () => {
+        console.log('Running scheduled YouTube video caching for Monday-Saturday at 7:30 AM...');
+        await cacheYoutubeVideos();
         await syncYoutubeData();
-
     }, {
         scheduled: true,
-        timezone: "Asia/Seoul" // 한국 시간대 설정
+        timezone: "Asia/Seoul"
     });
-    console.log("YouTube video caching scheduled for every Sunday at 3:00 PM (Asia/Seoul).");
+
+    // Schedule YouTube video caching for Sunday at 3:00 PM
+    cron.schedule('0 15 * * SUN', async () => {
+        console.log('Running scheduled YouTube video caching for Sunday at 3:00 PM...');
+        await cacheYoutubeVideos();
+        await syncYoutubeData();
+    }, {
+        scheduled: true,
+        timezone: "Asia/Seoul"
+    });
+
+    // Schedule YouTube video caching for Wednesday at 10:00 PM
+    cron.schedule('0 22 * * WED', async () => {
+        console.log('Running scheduled YouTube video caching for Wednesday at 10:00 PM...');
+        await cacheYoutubeVideos();
+        await syncYoutubeData();
+    }, {
+        scheduled: true,
+        timezone: "Asia/Seoul"
+    });
+    console.log("YouTube video caching scheduled: Mon-Sat at 7:30 AM, Sun at 3:00 PM, Wed at 10:00 PM (Asia/Seoul).");
 
 }).catch(err => {
     console.error("Failed to initialize database:", err);
