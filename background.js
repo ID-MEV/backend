@@ -39,4 +39,47 @@ router.post('/background', async (req, res) => {
     }
 });
 
+// GET endpoint to retrieve theme color setting
+// (Assuming user_id is 1 for now, will be dynamic with authentication)
+router.get('/theme', async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query("SELECT theme_color FROM user_settings WHERE user_id = ?", [1]);
+        if (result.length > 0) {
+            res.json({ theme_color: result[0].theme_color });
+        } else {
+            // If no setting is found for user_id 1, return default
+            res.status(404).json({ message: "Theme setting not found for user_id 1" });
+        }
+    } catch (err) {
+        console.error("Error fetching theme setting:", err);
+        res.status(500).json({ message: "Error fetching theme setting" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+// POST endpoint to update theme color setting
+// (Assuming user_id is 1 for now, will be dynamic with authentication)
+router.post('/theme', async (req, res) => {
+    const { theme_color } = req.body;
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        // UPSERT logic: if user_id 1 exists, update; otherwise, insert.
+        // For MariaDB, this is done with INSERT ... ON DUPLICATE KEY UPDATE
+        await conn.query(
+            "INSERT INTO user_settings (user_id, theme_color) VALUES (?, ?) ON DUPLICATE KEY UPDATE theme_color = ?",
+            [1, theme_color, theme_color]
+        );
+        res.status(200).json({ message: "Theme setting updated successfully" });
+    } catch (err) {
+        console.error("Error updating theme setting:", err);
+        res.status(500).json({ message: "Error updating theme setting" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
 module.exports = router;

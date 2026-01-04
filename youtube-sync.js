@@ -26,14 +26,28 @@ async function fetchVideosFromPlaylist(playlistId) {
             },
         });
 
-        return response.data.items.map(item => ({
-            playlistId: playlistId,
-            videoId: item.snippet.resourceId.videoId,
-            title: item.snippet.title,
-            url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`,
-            position: item.snippet.position,
-            publishedAt: item.snippet.publishedAt,
-        }));
+        return response.data.items
+            .filter(item => {
+                const title = item.snippet.title;
+                const description = item.snippet.description;
+                // item.snippet.resourceId가 존재하고 그 안에 videoId가 있는지 확인합니다.
+                const videoIdExists = item.snippet.resourceId && item.snippet.resourceId.videoId;
+
+                // videoId가 존재하지 않거나, 비공개/삭제된 제목이거나, 비공개/사용불가 설명인 경우 필터링
+                return videoIdExists &&
+                       title !== 'Private video' &&
+                       title !== 'Deleted video' &&
+                       description !== 'This video is unavailable.' &&
+                       description !== 'This video is private.';
+            })
+            .map(item => ({
+                playlistId: playlistId,
+                videoId: item.snippet.resourceId.videoId,
+                title: item.snippet.title,
+                url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`,
+                position: item.snippet.position,
+                publishedAt: item.snippet.publishedAt,
+            }));
     } catch (error) {
         console.error(`Playlist ${playlistId}로부터 영상을 가져오는 데 실패했습니다:`, error.response ? error.response.data : error.message);
         return [];

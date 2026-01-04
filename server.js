@@ -6,6 +6,7 @@ const { getPlaylistVideos } = require('./services/youtubeService');
 const { syncYoutubeData } = require('./youtube-sync');
 require('dotenv').config({ path: '.env' });
 const cors = require('cors'); // 1. cors 모듈 추가
+const bcrypt = require('bcrypt'); // bcrypt 모듈 추가
 
 const app = express();
 app.use(express.json());
@@ -69,6 +70,64 @@ app.use('/api/memo', memoRouter);
 app.use('/api/settings', backgroundRouter); // Add this line
 app.use('/api/youtube-videos', youtubeRouter);
 app.use('/api/sermons', sermonRouter);
+
+// API endpoint for member search
+app.get('/api/member', async (req, res) => {
+    const { field, value } = req.query;
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        let query = "SELECT ID, 이름, 순, 직분, 성별, 배우자, 양음력, 생년월일, 자택번호, 휴대번호, 가족사항, 주소 FROM members";
+        const params = [];
+
+        if (field && value) {
+            query += ` WHERE ${field} LIKE ?`;
+            params.push(`%${value}%`);
+        }
+
+        const members = await conn.query(query, params);
+        res.status(200).json(members);
+
+    } catch (err) {
+        console.error("Error during member search:", err);
+        res.status(500).json({ message: "회원 검색 중 서버 오류 발생" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+// API endpoint for user login
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        // Assuming 'users' table exists with 'username' and 'password_hash' columns
+        const users = await conn.query("SELECT * FROM users WHERE username = ?", [username]);
+
+        if (users.length === 0) {
+            return res.status(401).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+
+        const user = users[0];
+        const passwordMatch = await bcrypt.compare(password, user.password_hash);
+
+        if (passwordMatch) {
+            // Login successful
+            // For now, just send a success message. JWT will be implemented later.
+            res.status(200).json({ message: '로그인 성공', username: user.username });
+        } else {
+            res.status(401).json({ message: '비밀번호가 일치하지 않습니다.' });
+        }
+
+    } catch (err) {
+        console.error("Error during login:", err);
+        res.status(500).json({ message: "로그인 중 서버 오류 발생" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
 
 // API endpoint to get cached videos
 app.get('/api/videos', async (req, res) => {
