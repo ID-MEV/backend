@@ -72,6 +72,8 @@ async function initializeDatabase() {
             CREATE TABLE IF NOT EXISTS user_settings (
                 user_id INT PRIMARY KEY,
                 theme_color VARCHAR(50) DEFAULT '#1E4040',
+                weather_location VARCHAR(255) DEFAULT 'Seoul',
+                weather_unit VARCHAR(10) DEFAULT 'celsius',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
@@ -87,10 +89,26 @@ async function initializeDatabase() {
         await conn.query(alterUserSettingsTableQuery);
         console.log("Column 'theme_color' in table 'user_settings' ensured to be VARCHAR(50).");
 
+        // Add weather_location column to user_settings table if not exists
+        const addWeatherLocationColumnQuery = `
+            ALTER TABLE user_settings
+            ADD COLUMN IF NOT EXISTS weather_location VARCHAR(255) DEFAULT 'Seoul'
+        `;
+        await conn.query(addWeatherLocationColumnQuery);
+        console.log("Column 'weather_location' in table 'user_settings' ensured.");
+
+        // Add weather_unit column to user_settings table if not exists
+        const addWeatherUnitColumnQuery = `
+            ALTER TABLE user_settings
+            ADD COLUMN IF NOT EXISTS weather_unit VARCHAR(10) DEFAULT 'celsius'
+        `;
+        await conn.query(addWeatherUnitColumnQuery);
+        console.log("Column 'weather_unit' in table 'user_settings' ensured.");
+
         // Add a default user setting if not exists
         // (Assuming a default user_id of 1 for simplicity, replace with actual user management)
         const insertDefaultUserSettingQuery = `
-            INSERT IGNORE INTO user_settings (user_id, theme_color) VALUES (1, '#1E4040')
+            INSERT IGNORE INTO user_settings (user_id, theme_color, weather_location, weather_unit) VALUES (1, '#1E4040', 'Seoul', 'celsius')
         `;
         await conn.query(insertDefaultUserSettingQuery);
         console.log("Default user setting ensured for user_id 1.");
