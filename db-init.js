@@ -30,11 +30,25 @@ async function createOrUpdateUser() {
         // Parse command line arguments
         const args = process.argv.slice(2); // node db-init.js [username] [password]
         const username = args[0] || 'mev'; // Default to 'mev' if no argument
-        const targetPassword = args[1] || process.env.DEFAULT_USER_PASSWORD || 'password123'; // Default to 'password123' if no argument or env var
+        let targetPassword = args[1]; // 명령줄 인자로 비밀번호가 주어지면 사용
 
+        // 중요: .env 파일은 Git 저장소에 포함되지 않으므로, 이 파일에 민감한 정보를 직접 커밋하지 마세요.
+        // GitHub와 같은 버전 관리 시스템에는 .env 파일이 업로드되지 않습니다.
+        // 개발 환경에서는 mev_home-backend/.env 파일에 DEFAULT_USER_PASSWORD 변수를 설정하여 비밀번호를 관리하는 것을 권장합니다.
+        // 예: DEFAULT_USER_PASSWORD=내_안전한_비밀번호
         if (!targetPassword) {
+            targetPassword = process.env.DEFAULT_USER_PASSWORD;
+        }
+
+        // 명령줄 인자나 환경 변수에도 비밀번호가 없으면 'password123'을 사용하되,
+        // 이 경우 기존 사용자의 비밀번호가 'password123'이 아닐 경우 업데이트를 건너뛰어 보호합니다.
+        const useDefaultHardcodedPassword = !args[1] && !process.env.DEFAULT_USER_PASSWORD;
+
+        if (!targetPassword && !useDefaultHardcodedPassword) {
             console.error("Error: No password provided. Please specify a password as an argument or in the .env file (DEFAULT_USER_PASSWORD).");
             process.exit(1);
+        } else if (!targetPassword && useDefaultHardcodedPassword) {
+            targetPassword = 'password123';
         }
 
         const saltRounds = 10;
@@ -49,11 +63,16 @@ async function createOrUpdateUser() {
             console.log(`Default user '${username}' created with password (hashed).`);
             console.log(`Default password for '${username}' is: ${targetPassword}`);
         } else {
-            // User exists, update their password
+            // User exists, update their password if necessary
             const currentUser = existingUsers[0];
             const passwordMatch = await bcrypt.compare(targetPassword, currentUser.password_hash);
 
-            if (!passwordMatch) { // Only update if the new password is different from the current one
+            if (useDefaultHardcodedPassword && !passwordMatch) {
+                // 명령줄 인자나 환경 변수 없이 'password123'을 사용하려는데,
+                // 기존 비밀번호가 'password123'과 다르면 업데이트를 건너뛰어 기존 비밀번호를 보호합니다.
+                console.log(`User '${username}' exists with a different password. Skipping update to default 'password123' to preserve existing password.`);
+            } else if (!passwordMatch) {
+                // 새로운 비밀번호가 기존 비밀번호와 다를 경우에만 업데이트
                 await conn.query("UPDATE users SET password_hash = ? WHERE username = ?", [targetPasswordHash, username]);
                 console.log(`Password for user '${username}' updated.`);
                 console.log(`New default password for '${username}' is: ${targetPassword}`);
@@ -70,7 +89,10 @@ async function createOrUpdateUser() {
 }
 
 // Add this function
-createOrUpdateUser().catch(err => {
+createOrUpdateUser().then(() => {
+    console.log("DB initialization/update process completed successfully.");
+    process.exit(0); // 명시적으로 프로세스 종료
+}).catch(err => {
     console.error("Error during user DB initialization:", err);
     process.exit(1);
 });
