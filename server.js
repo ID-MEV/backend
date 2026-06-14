@@ -25,6 +25,7 @@ const backgroundRouter = require('./background'); // Add this line
 const youtubeRouter = require('./youtube');
 const sermonRouter = require('./sermons');
 const weatherRouter = require('./weather');
+const wpMemoRouter = require('./wp-memo');
 
 // Initialize database and start caching
 initializeDatabase().then(() => {
@@ -72,6 +73,7 @@ app.use('/api/settings', backgroundRouter); // Add this line
 app.use('/api/youtube-videos', youtubeRouter);
 app.use('/api/sermons', sermonRouter);
 app.use('/api/weather', weatherRouter);
+app.use('/api/wp-memo', wpMemoRouter);
 
 // API endpoint for member search
 app.get('/api/member', async (req, res) => {
