@@ -7,6 +7,8 @@ const { syncYoutubeData } = require('./youtube-sync');
 require('dotenv').config({ path: '.env' });
 const cors = require('cors'); // 1. cors 모듈 추가
 const bcrypt = require('bcrypt'); // bcrypt 모듈 추가
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET, authenticateToken } = require('./auth');
 
 const app = express();
 app.use(express.json());
@@ -15,9 +17,10 @@ app.use(cors({
         'https://mev.o-r.kr',
         'http://localhost:5173',
         'http://mev.o-r.kr:5173',
-        'https://seongrim.o-r.kr'
-    ]
-}));
+        'https://seongrim.o-r.kr',
+        'http://192.168.0.75:5173'
+    ],
+}))
 const PORT = process.env.PORT || 5101;
 
 const memoRouter = require('./memo');
@@ -69,11 +72,34 @@ initializeDatabase().then(() => {
 
 // API Routes
 app.use('/api/memo', memoRouter);
-app.use('/api/settings', backgroundRouter); // Add this line
 app.use('/api/youtube-videos', youtubeRouter);
 app.use('/api/sermons', sermonRouter);
 app.use('/api/weather', weatherRouter);
 app.use('/api/wp-memo', wpMemoRouter);
+
+// Admin-only routes (require authentication)
+app.use('/api/settings', authenticateToken, backgroundRouter);
+
+// Admin dashboard stats
+app.get('/api/admin/stats', authenticateToken, async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const [memos] = await conn.query("SELECT COUNT(*) as count FROM memos");
+        const [videos] = await conn.query("SELECT COUNT(*) as count FROM videos");
+        const [members] = await conn.query("SELECT COUNT(*) as count FROM members");
+        res.json({
+            memos: memos.count,
+            videos: videos.count,
+            members: members.count,
+        });
+    } catch (err) {
+        console.error("Error fetching admin stats:", err);
+        res.status(500).json({ message: "통계 조회 중 오류 발생" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
 
 // API endpoint for member search
 app.get('/api/member', async (req, res) => {
@@ -100,13 +126,12 @@ app.get('/api/member', async (req, res) => {
     }
 });
 
-// API endpoint for user login
+// API endpoint for user login (JWT)
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     let conn;
     try {
         conn = await pool.getConnection();
-        // Assuming 'users' table exists with 'username' and 'password_hash' columns
         const users = await conn.query("SELECT * FROM users WHERE username = ?", [username]);
 
         if (users.length === 0) {
@@ -117,9 +142,12 @@ app.post('/api/login', async (req, res) => {
         const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
         if (passwordMatch) {
-            // Login successful
-            // For now, just send a success message. JWT will be implemented later.
-            res.status(200).json({ message: '로그인 성공', username: user.username });
+            const token = jwt.sign(
+                { id: user.id, username: user.username },
+                JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+            res.status(200).json({ message: '로그인 성공', token, username: user.username });
         } else {
             res.status(401).json({ message: '비밀번호가 일치하지 않습니다.' });
         }

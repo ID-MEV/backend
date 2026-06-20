@@ -91,6 +91,21 @@ fix: 푸터 더미데이터 삭제 및 정보 최신화
 
 ---
 
+## ⚠️ 위험한 명령 규칙 (Destructive Command Safety)
+
+**파괴적인 명령은 사용자에게 직접 실행을 요청할 것.**
+
+다음과 같은 명령은 내가 직접 실행하지 않고, 사용자에게 명령어를 제시하여 직접 실행하게 할 것:
+- `rm`, `rm -rf` 등 파일/디렉토리 삭제
+- `git push --force`, `git reset --hard` 등 되돌릴 수 없는 git 명령
+- `sudo` 권한이 필요한 시스템 설정 변경
+- 데이터베이스 삭제/초기화
+- 기타 되돌릴 수 없는 모든 작업
+
+**이유:** 파괴적인 작업은 실수 시 복구가 불가능하므로, 사용자의 명시적 확인 후 실행해야 함.
+
+---
+
 ## 🔒 보안 규칙 (Security Rules)
 
 - API 키, 비밀번호, 토큰 등을 코드에 하드코딩하지 말 것.
@@ -189,43 +204,3 @@ fix: 푸터 더미데이터 삭제 및 정보 최신화
 4. **커밋**: 커밋 규칙에 따라 커밋 메시지 작성 → `git add` → `git commit` → `git push`
 5. **요약 보고**: 변경 파일, 내용, 검증 결과, 커밋 해시를 사용자에게 보고
 6. **개발서버**: 필요 시 백그라운드 실행, 작업 완료 후 종료
-
----
-
-## 📌 백엔드 프로젝트 특이사항
-
-### 기술 스택
-- Express + MariaDB (mysql2/mariadb 드라이버)
-- PM2로 프로세스 관리 (`pm2 start server.js --watch`)
-- 포트: 5101
-- 데이터베이스: MariaDB (사용자: mev)
-
-### 주요 파일
-- `server.js` — 메인 서버 엔트리포인트
-- `db.js` — 데이터베이스 연결 및 테이블 초기화
-- `controllers/` — 컨트롤러 (sermonController.js, youtubeController.js)
-- `models/` — 데이터 모델 (youtubeModel.js)
-
-### 개발 서버 실행
-```bash
-cd /var/www/html/project/mev_home-backend
-pm2 start server.js --watch
-```
-
-### 환경 변수
-- `.env` 파일에서 DB 연결 정보 관리
-- DB 이름, 사용자, 비밀번호 등 포함
-
-### API 엔드포인트
-| 메서드 | 경로 | 설명 |
-|---|---|---|
-| GET | /api/memo | 자유게시판 목록 |
-| POST | /api/memo | 게시글 작성 |
-| DELETE | /api/memo/{id} | 게시글 삭제 |
-| GET | /api/sermons/latest | 최신 설교 |
-| GET | /api/youtube-videos | 유튜브 영상 목록 |
-| GET | /api/weather | 날씨 |
-| GET | /api/member | 회원 검색 |
-| POST | /api/login | 로그인 |
-| GET | /api/videos | 캐시된 영상 |
-| GET | /api/wp-memo | WP 메모 |

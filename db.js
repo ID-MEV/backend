@@ -125,6 +125,20 @@ async function initializeDatabase() {
         await conn.query(createUsersTableQuery);
         console.log("Table 'users' ensured.");
 
+        // Create admin account if not exists
+        const bcrypt = require('bcrypt');
+        const existingAdmin = await conn.query("SELECT id FROM users WHERE username = ?", ['admin']);
+        if (existingAdmin.length === 0) {
+            const passwordHash = await bcrypt.hash('admin123', 10);
+            await conn.query(
+                "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+                ['admin', passwordHash]
+            );
+            console.log("Admin account created (username: admin, password: admin123)");
+        } else {
+            console.log("Admin account already exists.");
+        }
+
         // Create members table if not exists
         const createMembersTableQuery = `
             CREATE TABLE IF NOT EXISTS members (
