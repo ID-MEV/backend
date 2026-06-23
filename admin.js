@@ -127,10 +127,22 @@ router.get('/stats', async (req, res) => {
         const [memos] = await conn.query("SELECT COUNT(*) as count FROM memos");
         const [videos] = await conn.query("SELECT COUNT(*) as count FROM videos");
         const [members] = await conn.query("SELECT COUNT(*) as count FROM members");
+
+        // WordPress 게시글 수 가져오기
+        let wpPosts = 0;
+        try {
+            const wpRes = await fetch('https://api.seongrim.o-r.kr/wp-json/wp/v2/posts?per_page=1');
+            const totalHeader = wpRes.headers.get('X-WP-Total');
+            wpPosts = totalHeader ? parseInt(totalHeader, 10) : 0;
+        } catch (wpErr) {
+            console.error('WP posts count fetch failed:', wpErr.message);
+        }
+
         res.json({
             memos: memos.count,
             videos: videos.count,
             members: members.count,
+            wpPosts,
         });
     } catch (err) {
         console.error("Error fetching admin stats:", err);
