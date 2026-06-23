@@ -29,6 +29,7 @@ const youtubeRouter = require('./youtube');
 const sermonRouter = require('./sermons');
 const weatherRouter = require('./weather');
 const wpMemoRouter = require('./wp-memo');
+const adminRouter = require('./admin');
 
 // Initialize database and start caching
 initializeDatabase().then(() => {
@@ -80,26 +81,8 @@ app.use('/api/wp-memo', wpMemoRouter);
 // Admin-only routes (require authentication)
 app.use('/api/settings', authenticateToken, backgroundRouter);
 
-// Admin dashboard stats
-app.get('/api/admin/stats', authenticateToken, async (req, res) => {
-    let conn;
-    try {
-        conn = await pool.getConnection();
-        const [memos] = await conn.query("SELECT COUNT(*) as count FROM memos");
-        const [videos] = await conn.query("SELECT COUNT(*) as count FROM videos");
-        const [members] = await conn.query("SELECT COUNT(*) as count FROM members");
-        res.json({
-            memos: memos.count,
-            videos: videos.count,
-            members: members.count,
-        });
-    } catch (err) {
-        console.error("Error fetching admin stats:", err);
-        res.status(500).json({ message: "통계 조회 중 오류 발생" });
-    } finally {
-        if (conn) conn.release();
-    }
-});
+// Admin dashboard routes (require authentication)
+app.use('/api/admin', authenticateToken, adminRouter);
 
 // API endpoint for member search
 app.get('/api/member', async (req, res) => {
