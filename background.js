@@ -22,7 +22,7 @@ router.get('/background', async (req, res) => {
     }
 });
 
-// POST endpoint to update background setting
+// POST endpoint to update background setting (admin only)
 router.post('/background', async (req, res) => {
     const { background_image_url } = req.body;
     let conn;

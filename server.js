@@ -78,7 +78,41 @@ app.use('/api/sermons', sermonRouter);
 app.use('/api/weather', weatherRouter);
 app.use('/api/wp-memo', wpMemoRouter);
 
-// Admin-only routes (require authentication)
+// Background/theme routes
+// GET /api/settings/background and GET /api/settings/theme are public (for mev.o-r.kr)
+// POST/PUT /api/settings/* require authentication (admin only)
+app.get('/api/settings/background', (req, res) => {
+    const { pool } = require('./db');
+    pool.getConnection().then(conn => {
+        conn.query("SELECT setting_value FROM settings WHERE setting_key = ?", ['current_background']).then(result => {
+            conn.release();
+            if (result.length > 0) {
+                res.json({ background_image_url: result[0].setting_value });
+            } else {
+                res.status(404).json({ message: "Background setting not found" });
+            }
+        }).catch(err => {
+            conn.release();
+            res.status(500).json({ message: "Error fetching background setting" });
+        });
+    });
+});
+app.get('/api/settings/theme', (req, res) => {
+    const { pool } = require('./db');
+    pool.getConnection().then(conn => {
+        conn.query("SELECT theme_color FROM user_settings WHERE user_id = ?", [1]).then(result => {
+            conn.release();
+            if (result.length > 0) {
+                res.json({ theme_color: result[0].theme_color });
+            } else {
+                res.status(404).json({ message: "Theme setting not found" });
+            }
+        }).catch(err => {
+            conn.release();
+            res.status(500).json({ message: "Error fetching theme setting" });
+        });
+    });
+});
 app.use('/api/settings', authenticateToken, backgroundRouter);
 
 // Admin dashboard routes (require authentication)
