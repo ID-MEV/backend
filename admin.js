@@ -74,16 +74,109 @@ router.get('/settings', async (req, res) => {
     }
 });
 
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// 업로드 디렉토리 확보
+const uploadsDir = process.env.SEONGRIM_UPLOADS_PATH || path.join(__dirname, '../seongrim/src/uploads');
+const membersUploadDir = path.join(uploadsDir, 'members');
+if (!fs.existsSync(membersUploadDir)) {
+    fs.mkdirSync(membersUploadDir, { recursive: true });
+}
+
+// multer 파일 업로드 설정
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, membersUploadDir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        const memberId = req.params.id || Date.now();
+        cb(null, `${memberId}_${Date.now()}${ext}`);
+    }
+});
+const upload = multer({ storage });
+
 // 회원 목록 (관리자)
 router.get('/members', async (req, res) => {
     let conn;
     try {
         conn = await pool.getConnection();
-        const members = await conn.query("SELECT ID, 이름, 직분, 휴대번호, 자택번호, 주소 FROM members ORDER BY 이름 ASC");
+        const members = await conn.query("SELECT ID, 이름, 순, 직분, 성별, photo_url FROM members ORDER BY ID ASC");
         res.json(members);
     } catch (err) {
         console.error("Error fetching members:", err);
         res.status(500).json({ message: "회원 조회 중 오류 발생" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+// 신규 회원 등록 (관리자)
+router.post('/members', async (req, res) => {
+    let conn;
+    try {
+        const { name, group_name, position, gender, photo_url } = req.body;
+        if (!name) {
+            return res.status(400).json({ message: "이름은 필수 항목입니다." });
+        }
+        conn = await pool.getConnection();
+        
+        // ID 최대값 계산 후 +1
+        const [maxResult] = await conn.query("SELECT MAX(ID) as maxId FROM members");
+        const nextId = (maxResult && maxResult.maxId) ? maxResult.maxId + 1 : 1;
+
+        await conn.query(
+            "INSERT INTO members (ID, 이름, 순, 직분, 성별, photo_url) VALUES (?, ?, ?, ?, ?, ?)",
+            [nextId, name, group_name || '', position || '', gender || '남', photo_url || null]
+        );
+
+        res.status(201).json({ message: "회원이 등록되었습니다.", id: nextId });
+    } catch (err) {
+        console.error("Error adding member:", err);
+        res.status(500).json({ message: "회원 등록 중 오류 발생" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+// 회원 삭제 (관리자)
+router.delete('/members/:id', async (req, res) => {
+    let conn;
+    try {
+        const { id } = req.params;
+        conn = await pool.getConnection();
+        const result = await conn.query("DELETE FROM members WHERE ID = ?", [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "해당 회원을 찾을 수 없습니다." });
+        }
+        res.json({ message: "회원이 삭제되었습니다." });
+    } catch (err) {
+        console.error("Error deleting member:", err);
+        res.status(500).json({ message: "회원 삭제 중 오류 발생" });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+// 회원 사진 업로드 (관리자)
+router.post('/members/:id/photo', upload.single('photo'), async (req, res) => {
+    let conn;
+    try {
+        const { id } = req.params;
+        if (!req.file) {
+            return res.status(400).json({ message: "업로드할 사진 파일이 없습니다." });
+        }
+        const photoUrl = `/uploads/members/${req.file.filename}`;
+        
+        conn = await pool.getConnection();
+        await conn.query("UPDATE members SET photo_url = ? WHERE ID = ?", [photoUrl, id]);
+        
+        res.json({ message: "사진이 업로드되었습니다.", photo_url: photoUrl });
+    } catch (err) {
+        console.error("Error uploading member photo:", err);
+        res.status(500).json({ message: "사진 업로드 중 오류 발생" });
     } finally {
         if (conn) conn.release();
     }
