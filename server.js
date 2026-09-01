@@ -10,8 +10,10 @@ const bcrypt = require('bcrypt'); // bcrypt 모듈 추가
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET, authenticateToken } = require('./auth');
 
+const path = require('path');
 const app = express();
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use(cors({
     origin: [
         'https://mev.o-r.kr',
@@ -124,7 +126,7 @@ app.get('/api/member', async (req, res) => {
     let conn;
     try {
         conn = await pool.getConnection();
-        let query = "SELECT ID, 이름, 순, 직분, 성별, 배우자, 양음력, 생년월일, 자택번호, 휴대번호, 가족사항, 주소 FROM members";
+        let query = "SELECT ID, 이름, 순, 직분, 성별, 배우자, 양음력, 생년월일, 자택번호, 휴대번호, 가족사항, 주소, photo_url FROM members";
         const params = [];
 
         if (field && value) {

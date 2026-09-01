@@ -154,6 +154,7 @@ async function initializeDatabase() {
                 휴대번호 VARCHAR(255),
                 가족사항 TEXT,
                 주소 TEXT,
+                photo_url VARCHAR(255),
                 createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `;
