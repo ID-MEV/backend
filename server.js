@@ -13,7 +13,8 @@ const { JWT_SECRET, authenticateToken } = require('./auth');
 const path = require('path');
 const app = express();
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+const uploadsPath = process.env.SEONGRIM_UPLOADS_PATH || path.join(__dirname, '../seongrim/src/uploads');
+app.use('/uploads', express.static(uploadsPath));
 app.use(cors({
     origin: [
         'https://mev.o-r.kr',
