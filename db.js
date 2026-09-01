@@ -142,7 +142,7 @@ async function initializeDatabase() {
         // Create members table if not exists
         const createMembersTableQuery = `
             CREATE TABLE IF NOT EXISTS members (
-                ID VARCHAR(255) PRIMARY KEY,
+                ID INT PRIMARY KEY,
                 이름 VARCHAR(255) NOT NULL,
                 순 VARCHAR(255),
                 직분 VARCHAR(255),
@@ -160,16 +160,16 @@ async function initializeDatabase() {
         await conn.query(createMembersTableQuery);
         console.log("Table 'members' ensured.");
 
-        // Alter 'ID' column of 'members' table to VARCHAR(255) if it's not already
+        // Alter 'ID' column of 'members' table to INT if it's not already
         const alterMembersIdColumnQuery = `
-            ALTER TABLE members MODIFY ID VARCHAR(255) PRIMARY KEY;
+            ALTER TABLE members MODIFY ID INT PRIMARY KEY;
         `;
         try {
             await conn.query(alterMembersIdColumnQuery);
-            console.log("Table 'members' ID column ensured to be VARCHAR(255) PRIMARY KEY.");
+            console.log("Table 'members' ID column ensured to be INT PRIMARY KEY.");
         } catch (alterErr) {
             if (!alterErr.sqlMessage || !alterErr.sqlMessage.includes("Duplicate column name 'ID'") && !alterErr.sqlMessage.includes("already exists") && !alterErr.sqlMessage.includes("invalid column type")) {
-                 console.warn("Could not alter 'members' ID column to VARCHAR(255) (might already be correct or other issue):", alterErr.message);
+                 console.warn("Could not alter 'members' ID column to INT (might already be correct or other issue):", alterErr.message);
             }
         }
 

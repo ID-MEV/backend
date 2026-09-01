@@ -132,6 +132,8 @@ app.get('/api/member', async (req, res) => {
             params.push(`%${value}%`);
         }
 
+        query += " ORDER BY ID ASC";
+
         const members = await conn.query(query, params);
         res.status(200).json(members);
 
