@@ -237,10 +237,10 @@ router.get('/stats', async (req, res) => {
         }
 
         res.json({
-            memos: memos.count,
-            videos: videos.count,
-            members: members.count,
-            wpPosts,
+            memos: Number(memos?.count || 0),
+            videos: Number(videos?.count || 0),
+            members: Number(members?.count || 0),
+            wpPosts: Number(wpPosts || 0),
         });
     } catch (err) {
         console.error("Error fetching admin stats:", err);
