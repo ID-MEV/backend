@@ -11,6 +11,7 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET, authenticateToken } = require('./auth');
 
 const path = require('path');
+const fs = require('fs');
 const app = express();
 app.use(express.json());
 const baseDir = '/var/www/html/seongrim/src/uploads';
