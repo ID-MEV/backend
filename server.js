@@ -14,18 +14,22 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 app.use(express.json());
-const baseDir = '/var/www/html/seongrim/src/uploads';
-const uploadsPath = process.env.SEONGRIM_UPLOADS_PATH || (fs.existsSync('/var/www/html') ? baseDir : path.resolve(__dirname, '../../seongrim/src/uploads'));
-app.use('/uploads', express.static(uploadsPath));
-app.use(cors({
+const corsOptions = {
     origin: [
         'https://mev.o-r.kr',
-        'http://localhost:5173',
         'http://mev.o-r.kr:5173',
         'https://seongrim.o-r.kr',
+        'http://seongrim.o-r.kr:5173',
+        'http://localhost:5173',
         'http://192.168.0.75:5173'
     ],
-}))
+    credentials: true
+};
+
+app.use(cors(corsOptions));
+const baseDir = '/var/www/html/seongrim/src/uploads';
+const uploadsPath = process.env.SEONGRIM_UPLOADS_PATH || (fs.existsSync('/var/www/html') ? baseDir : path.resolve(__dirname, '../../seongrim/src/uploads'));
+app.use('/uploads', cors(corsOptions), express.static(uploadsPath));
 const PORT = process.env.PORT || 5101;
 
 const memoRouter = require('./memo');
