@@ -78,8 +78,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// 업로드 디렉토리 확보
-const uploadsDir = process.env.SEONGRIM_UPLOADS_PATH || (fs.existsSync('/var/www/html/seongrim/src/uploads') ? '/var/www/html/seongrim/src/uploads' : path.resolve(__dirname, '../../seongrim/src/uploads'));
+// 업로드 디렉토리 확보 (/var/www/html/seongrim/src/uploads 고정)
+const baseDir = '/var/www/html/seongrim/src/uploads';
+const uploadsDir = process.env.SEONGRIM_UPLOADS_PATH || (fs.existsSync('/var/www/html') ? baseDir : path.resolve(__dirname, '../../seongrim/src/uploads'));
 const membersUploadDir = path.join(uploadsDir, 'members');
 if (!fs.existsSync(membersUploadDir)) {
     fs.mkdirSync(membersUploadDir, { recursive: true });
