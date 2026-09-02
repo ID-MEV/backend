@@ -222,9 +222,13 @@ router.get('/stats', async (req, res) => {
     let conn;
     try {
         conn = await pool.getConnection();
-        const [memos] = await conn.query("SELECT COUNT(*) as count FROM memos");
-        const [videos] = await conn.query("SELECT COUNT(*) as count FROM videos");
-        const [members] = await conn.query("SELECT COUNT(*) as count FROM members");
+        const memosRes = await conn.query("SELECT COUNT(*) as count FROM memos");
+        const videosRes = await conn.query("SELECT COUNT(*) as count FROM videos");
+        const membersRes = await conn.query("SELECT COUNT(*) as count FROM members");
+
+        const memosCount = memosRes && memosRes[0] ? memosRes[0].count : 0;
+        const videosCount = videosRes && videosRes[0] ? videosRes[0].count : 0;
+        const membersCount = membersRes && membersRes[0] ? membersRes[0].count : 0;
 
         // WordPress 게시글 수 가져오기
         let wpPosts = 0;
@@ -237,14 +241,14 @@ router.get('/stats', async (req, res) => {
         }
 
         res.json({
-            memos: Number(memos?.count || 0),
-            videos: Number(videos?.count || 0),
-            members: Number(members?.count || 0),
-            wpPosts: Number(wpPosts || 0),
+            memos: Number(memosCount),
+            videos: Number(videosCount),
+            members: Number(membersCount),
+            wpPosts: Number(wpPosts),
         });
     } catch (err) {
         console.error("Error fetching admin stats:", err);
-        res.status(500).json({ message: "통계 조회 중 오류 발생" });
+        res.status(500).json({ message: "통계 조회 중 오류 발생", error: err.message });
     } finally {
         if (conn) conn.release();
     }
