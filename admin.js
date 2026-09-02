@@ -174,7 +174,11 @@ router.post('/members/:id/photo', upload.single('photo'), async (req, res) => {
         conn = await pool.getConnection();
         await conn.query("UPDATE members SET photo_url = ? WHERE ID = ?", [photoUrl, id]);
         
-        res.json({ message: "사진이 업로드되었습니다.", photo_url: photoUrl });
+        res.json({ 
+            message: "사진이 업로드되었습니다.", 
+            photo_url: photoUrl, 
+            saved_path: req.file.path 
+        });
     } catch (err) {
         console.error("Error uploading member photo:", err);
         res.status(500).json({ message: "사진 업로드 중 오류 발생" });
