@@ -13,8 +13,7 @@ const { JWT_SECRET, authenticateToken } = require('./auth');
 const path = require('path');
 const app = express();
 app.use(express.json());
-const fs = require('fs');
-const uploadsPath = process.env.SEONGRIM_UPLOADS_PATH || (fs.existsSync('/var/www/html/seongrim/src/uploads') ? '/var/www/html/seongrim/src/uploads' : path.join(__dirname, '../seongrim/src/uploads'));
+const uploadsPath = process.env.SEONGRIM_UPLOADS_PATH || (fs.existsSync('/var/www/html/seongrim/src/uploads') ? '/var/www/html/seongrim/src/uploads' : path.resolve(__dirname, '../../seongrim/src/uploads'));
 app.use('/uploads', express.static(uploadsPath));
 app.use(cors({
     origin: [
